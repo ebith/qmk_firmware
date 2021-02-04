@@ -1,0 +1,36 @@
+name: Build and upload
+
+on:
+    push:
+        branches:
+            - ebith
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        container:
+            image: docker://qmkfm/base_container:latest
+            options: -v ${{ github.workspace }}:/qmk_firmware
+
+        steps:
+            - uses: actions/checkout@v2
+              with:
+                  submodules: recursive
+            - run: make 7skb:ebith
+
+            - uses: actions/create-release@v1
+              id: create_release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ github.run_id }}
+                  release_name: ${{ github.run_id }}
+
+            - uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./7skb_rev1_ebith.hex
+                  asset_name: 7skb_rev1_ebith_${{ github.run_id }}.hex
+                  asset_content_type: application/octet-stream
